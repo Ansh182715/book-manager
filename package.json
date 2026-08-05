@@ -1,0 +1,17 @@
+{
+  "name": "bookmanager",
+  "version": "1.0.0",
+  "description": "Local desktop book manager for Foxit Reader",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^43.3.0",
+    "pdf-parse": "^2.4.5"
+  }
+}
