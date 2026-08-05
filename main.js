@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 const DATA_FILE = path.join(app.getPath('userData'), 'books.json');
 
@@ -49,14 +49,25 @@ ipcMain.handle('add-book', async () => {
     const fileName = path.basename(filePath);
     let totalPages = 'Unknown';
 
-    // Extract page count if it's a PDF
     if (path.extname(filePath).toLowerCase() === '.pdf') {
         try {
             const dataBuffer = fs.readFileSync(filePath);
-            const pdfData = await pdfParse(dataBuffer);
-            totalPages = pdfData.numpages;
+            const uint8ArrayData = new Uint8Array(dataBuffer);
+            const parser = new PDFParse(uint8ArrayData);
+            const info = await parser.getInfo({ parsePageInfo: true });
+            
+            // Handle if info.pages is an array or an object/number
+            if (Array.isArray(info?.pages)) {
+                totalPages = info.pages.length;
+            } else if (typeof info?.pages === 'number') {
+                totalPages = info.pages;
+            } else if (info?.numpages) {
+                totalPages = info.numpages;
+            } else {
+                totalPages = 'Unknown';
+            }
         } catch (err) {
-            console.error("Could not parse PDF pages", err);
+            console.error("Could not parse PDF pages:", err);
         }
     }
 
@@ -79,7 +90,7 @@ ipcMain.handle('get-books', () => {
     return loadBooksData();
 });
 
-// Launch book in Reader (defaults to system application like Foxit Reader)
+// Launch book in Reader
 ipcMain.on('open-book', (event, filePath) => {
     const command = `start "" "${filePath}"`;
     exec(command, (err) => {
